@@ -1,0 +1,512 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Tic Tac Toe | Two Players</title>
+
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    :root {
+      --bg: #101225;
+      --card: #1b1e36;
+      --cell: #252944;
+      --text: #f5f6ff;
+      --muted: #a3a8c5;
+      --blue: #6c7cff;
+      --pink: #ff729f;
+      --green: #5ce0b5;
+    }
+
+    body {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      font-family: Arial, Helvetica, sans-serif;
+      color: var(--text);
+      background:
+        radial-gradient(circle at top left, #28275a, transparent 40%),
+        radial-gradient(circle at bottom right, #352044, transparent 35%),
+        var(--bg);
+    }
+
+    .game {
+      width: 100%;
+      max-width: 440px;
+      padding: 28px;
+      background: rgba(27, 30, 54, 0.95);
+      border: 1px solid #343955;
+      border-radius: 28px;
+      box-shadow: 0 25px 80px rgba(0, 0, 0, 0.35);
+    }
+
+    .header {
+      text-align: center;
+      margin-bottom: 26px;
+    }
+
+    .badge {
+      display: inline-block;
+      padding: 7px 12px;
+      margin-bottom: 14px;
+      border-radius: 30px;
+      background: #2c3153;
+      color: var(--green);
+      font-size: 12px;
+      font-weight: bold;
+      letter-spacing: 1px;
+    }
+
+    h1 {
+      font-size: clamp(28px, 7vw, 36px);
+      letter-spacing: -1px;
+    }
+
+    h1 span {
+      color: var(--blue);
+    }
+
+    .subtitle {
+      margin-top: 8px;
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    .scores {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+      margin-bottom: 22px;
+    }
+
+    .score-card {
+      padding: 13px 5px;
+      text-align: center;
+      background: #242842;
+      border: 2px solid transparent;
+      border-radius: 15px;
+      transition: border-color 0.2s;
+    }
+
+    .score-card.active {
+      border-color: var(--blue);
+      background: #292e51;
+    }
+
+    .score-card:nth-child(2).active {
+      border-color: var(--pink);
+    }
+
+    .player-name {
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: bold;
+    }
+
+    .symbol {
+      margin: 6px 0;
+      font-size: 23px;
+      font-weight: bold;
+    }
+
+    .player-x .symbol {
+      color: var(--blue);
+    }
+
+    .player-o .symbol {
+      color: var(--pink);
+    }
+
+    .score {
+      font-size: 23px;
+      font-weight: bold;
+    }
+
+    .status {
+      min-height: 48px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 9px;
+      margin-bottom: 18px;
+      padding: 12px;
+      background: #242842;
+      border-radius: 13px;
+      text-align: center;
+      font-size: 15px;
+      font-weight: bold;
+    }
+
+    .status-dot {
+      width: 9px;
+      height: 9px;
+      border-radius: 50%;
+      background: var(--blue);
+      flex-shrink: 0;
+    }
+
+    .status-dot.o {
+      background: var(--pink);
+    }
+
+    .status-dot.draw {
+      background: var(--green);
+    }
+
+    .board {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 10px;
+      margin-bottom: 22px;
+    }
+
+    .cell {
+      aspect-ratio: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border: 1px solid #353b5d;
+      border-radius: 18px;
+      background: var(--cell);
+      color: var(--text);
+      font-size: clamp(38px, 11vw, 56px);
+      font-weight: bold;
+      cursor: pointer;
+      transition:
+        background 0.2s,
+        transform 0.15s,
+        border-color 0.2s;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    .cell:not(:disabled):hover {
+      background: #303654;
+      border-color: var(--blue);
+      transform: translateY(-2px);
+    }
+
+    .cell:focus-visible,
+    button:focus-visible {
+      outline: 3px solid white;
+      outline-offset: 3px;
+    }
+
+    .cell.x {
+      color: var(--blue);
+    }
+
+    .cell.o {
+      color: var(--pink);
+    }
+
+    .cell.winning {
+      background: #25463f;
+      border-color: var(--green);
+      color: var(--green);
+      animation: pop 0.3s ease;
+    }
+
+    .cell:disabled {
+      cursor: default;
+    }
+
+    @keyframes pop {
+      50% { transform: scale(1.06); }
+    }
+
+    .actions {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+
+    .btn {
+      padding: 14px 10px;
+      border: none;
+      border-radius: 13px;
+      font-size: 14px;
+      font-weight: bold;
+      cursor: pointer;
+      transition: transform 0.2s, opacity 0.2s;
+    }
+
+    .btn:hover {
+      transform: translateY(-2px);
+    }
+
+    .btn-primary {
+      background: var(--blue);
+      color: white;
+    }
+
+    .btn-secondary {
+      background: #303550;
+      color: var(--text);
+      border: 1px solid #424867;
+    }
+
+    .footer {
+      margin-top: 20px;
+      color: var(--muted);
+      text-align: center;
+      font-size: 12px;
+    }
+
+    @media (max-width: 380px) {
+      .game {
+        padding: 19px;
+        border-radius: 22px;
+      }
+
+      .board {
+        gap: 7px;
+      }
+
+      .cell {
+        border-radius: 13px;
+      }
+
+      .scores {
+        gap: 6px;
+      }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after {
+        animation-duration: 0.01ms !important;
+        transition-duration: 0.01ms !important;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <main class="game">
+    <header class="header">
+      <div class="badge">✦ TWO PLAYER GAME</div>
+      <h1>Tic Tac <span>Toe</span></h1>
+      <p class="subtitle">A little strategy goes a long way.</p>
+    </header>
+
+    <section class="scores" aria-label="Player scores">
+      <div class="score-card player-x active" id="cardX">
+        <div class="player-name">PLAYER 1</div>
+        <div class="symbol">X</div>
+        <div class="score" id="scoreX">0</div>
+      </div>
+
+      <div class="score-card">
+        <div class="player-name">DRAWS</div>
+        <div class="symbol">🤝</div>
+        <div class="score" id="scoreDraw">0</div>
+      </div>
+
+      <div class="score-card player-o" id="cardO">
+        <div class="player-name">PLAYER 2</div>
+        <div class="symbol">O</div>
+        <div class="score" id="scoreO">0</div>
+      </div>
+    </section>
+
+    <div class="status" id="status" role="status" aria-live="polite">
+      <span class="status-dot" id="statusDot"></span>
+      <span id="statusText">Player 1's turn (X)</span>
+    </div>
+
+    <section class="board" id="board" aria-label="Tic Tac Toe board">
+      <button class="cell" data-index="0" aria-label="Row 1, column 1"></button>
+      <button class="cell" data-index="1" aria-label="Row 1, column 2"></button>
+      <button class="cell" data-index="2" aria-label="Row 1, column 3"></button>
+      <button class="cell" data-index="3" aria-label="Row 2, column 1"></button>
+      <button class="cell" data-index="4" aria-label="Row 2, column 2"></button>
+      <button class="cell" data-index="5" aria-label="Row 2, column 3"></button>
+      <button class="cell" data-index="6" aria-label="Row 3, column 1"></button>
+      <button class="cell" data-index="7" aria-label="Row 3, column 2"></button>
+      <button class="cell" data-index="8" aria-label="Row 3, column 3"></button>
+    </section>
+
+    <div class="actions">
+      <button class="btn btn-primary" id="restartBtn">
+        ↻ New Round
+      </button>
+      <button class="btn btn-secondary" id="resetBtn">
+        Reset Scores
+      </button>
+    </div>
+
+    <p class="footer">Made for fun · Play fair · Have a great game!</p>
+  </main>
+
+  <script>
+    // Game state
+    const cells = document.querySelectorAll(".cell");
+    const statusText = document.getElementById("statusText");
+    const statusDot = document.getElementById("statusDot");
+    const cardX = document.getElementById("cardX");
+    const cardO = document.getElementById("cardO");
+
+    const scoreXElement = document.getElementById("scoreX");
+    const scoreOElement = document.getElementById("scoreO");
+    const scoreDrawElement = document.getElementById("scoreDraw");
+
+    const winningCombinations = [
+      [0, 1, 2],
+      [3, 4, 5],
+      [6, 7, 8],
+      [0, 3, 6],
+      [1, 4, 7],
+      [2, 5, 8],
+      [0, 4, 8],
+      [2, 4, 6]
+    ];
+
+    let board = Array(9).fill("");
+    let currentPlayer = "X";
+    let gameActive = true;
+
+    const scores = {
+      X: 0,
+      O: 0,
+      draw: 0
+    };
+
+    function updateStatus(message, type = "X") {
+      statusText.textContent = message;
+      statusDot.className = "status-dot";
+
+      if (type === "O") {
+        statusDot.classList.add("o");
+      } else if (type === "draw") {
+        statusDot.classList.add("draw");
+      }
+
+      cardX.classList.toggle("active", type === "X" && gameActive);
+      cardO.classList.toggle("active", type === "O" && gameActive);
+    }
+
+    function handleCellClick(event) {
+      const cell = event.currentTarget;
+      const index = Number(cell.dataset.index);
+
+      // Ignore occupied cells or clicks after the game ends.
+      if (!gameActive || board[index] !== "") {
+        return;
+      }
+
+      board[index] = currentPlayer;
+      cell.textContent = currentPlayer;
+      cell.classList.add(currentPlayer.toLowerCase());
+      cell.disabled = true;
+      cell.setAttribute(
+        "aria-label",
+        `Row ${Math.floor(index / 3) + 1}, column ${(index % 3) + 1}: ${currentPlayer}`
+      );
+
+      const winningCombination = getWinningCombination();
+
+      if (winningCombination) {
+        finishGame(winningCombination);
+        return;
+      }
+
+      if (board.every(value => value !== "")) {
+        finishDraw();
+        return;
+      }
+
+      currentPlayer = currentPlayer === "X" ? "O" : "X";
+
+      const playerNumber = currentPlayer === "X" ? 1 : 2;
+      updateStatus(`Player ${playerNumber}'s turn (${currentPlayer})`, currentPlayer);
+    }
+
+    function getWinningCombination() {
+      return winningCombinations.find(combination =>
+        combination.every(index => board[index] === currentPlayer)
+      );
+    }
+
+    function finishGame(combination) {
+      gameActive = false;
+      scores[currentPlayer]++;
+
+      combination.forEach(index => {
+        cells[index].classList.add("winning");
+      });
+
+      const playerNumber = currentPlayer === "X" ? 1 : 2;
+
+      updateStatus(`🎉 Player ${playerNumber} wins!`, "draw");
+      cardX.classList.toggle("active", currentPlayer === "X");
+      cardO.classList.toggle("active", currentPlayer === "O");
+
+      updateScores();
+      cells.forEach(cell => {
+        cell.disabled = true;
+      });
+    }
+
+    function finishDraw() {
+      gameActive = false;
+      scores.draw++;
+
+      updateStatus("It's a draw! 🤝", "draw");
+      updateScores();
+      cells.forEach(cell => {
+        cell.disabled = true;
+      });
+    }
+
+    function updateScores() {
+      scoreXElement.textContent = scores.X;
+      scoreOElement.textContent = scores.O;
+      scoreDrawElement.textContent = scores.draw;
+    }
+
+    function startNewRound() {
+      board = Array(9).fill("");
+      currentPlayer = "X";
+      gameActive = true;
+
+      cells.forEach((cell, index) => {
+        cell.textContent = "";
+        cell.disabled = false;
+        cell.className = "cell";
+        cell.setAttribute(
+          "aria-label",
+          `Row ${Math.floor(index / 3) + 1}, column ${(index % 3) + 1}`
+        );
+      });
+
+      updateStatus("Player 1's turn (X)", "X");
+    }
+
+    function resetScores() {
+      scores.X = 0;
+      scores.O = 0;
+      scores.draw = 0;
+
+      updateScores();
+      startNewRound();
+    }
+
+    cells.forEach(cell => {
+      cell.addEventListener("click", handleCellClick);
+    });
+
+    document.getElementById("restartBtn")
+      .addEventListener("click", startNewRound);
+
+    document.getElementById("resetBtn")
+      .addEventListener("click", resetScores);
+  </script>
+</body>
+</html>
